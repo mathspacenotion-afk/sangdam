@@ -6,23 +6,8 @@
 <title>수학공간 학생 수업 기록</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#fff;--bg2:#f5f4f2;--bg3:#edeae6;
-  --t1:#111;--t2:#666;--t3:#999;
-  --b1:rgba(0,0,0,.1);--b2:rgba(0,0,0,.22);
-  --r:8px;--rl:12px;
-  --warn-bg:#faeeda;--warn-t:#633806;
-  --danger-bg:#fcebeb;--danger-t:#a32d2d;
-  --info-bg:#e6f1fb;--info-t:#0c447c;
-}
-@media(prefers-color-scheme:dark){:root{
-  --bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;
-  --t1:#f5f5f5;--t2:#ababab;--t3:#6e6e73;
-  --b1:rgba(255,255,255,.1);--b2:rgba(255,255,255,.22);
-  --warn-bg:#412402;--warn-t:#fac775;
-  --danger-bg:#501313;--danger-t:#f09595;
-  --info-bg:#042c53;--info-t:#85b7eb;
-}}
+:root{--bg:#fff;--bg2:#f5f4f2;--bg3:#edeae6;--t1:#111;--t2:#666;--t3:#999;--b1:rgba(0,0,0,.1);--b2:rgba(0,0,0,.22);--r:8px;--rl:12px;--warn-bg:#faeeda;--warn-t:#633806;--danger-bg:#fcebeb;--danger-t:#a32d2d;--info-bg:#e6f1fb;--info-t:#0c447c;}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;--t1:#f5f5f5;--t2:#ababab;--t3:#6e6e73;--b1:rgba(255,255,255,.1);--b2:rgba(255,255,255,.22);--warn-bg:#412402;--warn-t:#fac775;--danger-bg:#501313;--danger-t:#f09595;--info-bg:#042c53;--info-t:#85b7eb;}}
 body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;background:var(--bg3);color:var(--t1);min-height:100vh;}
 #token-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
 .tbox{background:var(--bg);border:0.5px solid var(--b1);border-radius:var(--rl);padding:28px 24px;width:100%;max-width:420px;}
@@ -47,10 +32,12 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR','Malgun Goth
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
 .s-card{background:var(--bg);border:0.5px solid var(--b1);border-radius:var(--rl);padding:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .15s;}
 .s-card:hover{border-color:var(--b2);}
+.s-card.out{opacity:.5;}
 .av{width:36px;height:36px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;margin-bottom:8px;}
 .s-nm{font-size:14px;font-weight:500;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .s-sub{font-size:11px;color:var(--t2);}
 .s-cls{font-size:10px;color:var(--t3);margin-top:2px;}
+.s-out{font-size:10px;color:var(--danger-t);margin-top:2px;}
 .cnt{font-size:12px;color:var(--t2);margin-bottom:10px;}
 #profile{display:none;}
 .phdr{background:var(--bg);border-bottom:0.5px solid var(--b1);padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
@@ -83,10 +70,10 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR','Malgun Goth
 .ltxt2{font-size:13px;color:var(--t2);text-align:center;padding:18px 0;}
 .err{padding:10px 12px;border-radius:var(--r);background:var(--danger-bg);color:var(--danger-t);font-size:13px;margin-bottom:10px;}
 .empty{text-align:center;padding:32px 16px;font-size:13px;color:var(--t2);}
+.dbg{padding:8px 12px;border-radius:var(--r);background:var(--bg2);font-size:11px;color:var(--t3);margin-bottom:8px;font-family:monospace;}
 </style>
 </head>
 <body>
-
 <div id="token-screen">
   <div class="tbox">
     <h1>수학공간 학생 수업 기록</h1>
@@ -101,7 +88,6 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR','Malgun Goth
     </div>
   </div>
 </div>
-
 <div id="app">
   <div id="list-view">
     <div class="hdr">
@@ -119,6 +105,7 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR','Malgun Goth
     </div>
     <div class="page">
       <div id="list-err" class="err" style="display:none"></div>
+      <div id="list-debug" class="dbg" style="display:none"></div>
       <div id="list-loading">
         <div class="lbar"><div class="lbar-fill"></div></div>
         <div class="ltxt2">에어테이블에서 학생 목록 불러오는 중...</div>
@@ -131,7 +118,6 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR','Malgun Goth
       </div>
     </div>
   </div>
-
   <div id="profile">
     <div class="phdr">
       <button class="back" onclick="goBack()">
@@ -155,285 +141,284 @@ body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR','Malgun Goth
     </div>
   </div>
 </div>
-
 <script>
-const BASE = 'appxMMBoetYF4u2eO';
-const F = {
-  sName:'fld9th9v7T5NXykNa', sGrade:'flddWDsSawpSRZsTv',
-  sSchool:'fld38X6Mm0ao1PSYj', sClass:'fldRgJvxEkgxzLpk1', sStatus:'fldpj2cjO6b8x4M26',
-  cName:'fldJWIyfEAtE9lhYQ', scName:'fldGePCJIigrBqJWM',
-  lDate:'fld19rmWbyJhwrI4b', lClass:'fld8DNfmCLhVVf278',
-  lContent:'fld4YlOAIY2jXqfcE', lHw:'fldirbUHowlbeyYDT',
-  lNote:'fldDdQPzkWsftHJNh', lHwChk:'fldYXLAIsdGaw9MzI',
+var BASE='appxMMBoetYF4u2eO';
+var F={
+  sName:'fld9th9v7T5NXykNa',sGrade:'flddWDsSawpSRZsTv',
+  sSchool:'fld38X6Mm0ao1PSYj',sClass:'fldRgJvxEkgxzLpk1',sStatus:'fldpj2cjO6b8x4M26',
+  cName:'fldJWIyfEAtE9lhYQ',scName:'fldGePCJIigrBqJWM',
+  lDate:'fld19rmWbyJhwrI4b',lClass:'fld8DNfmCLhVVf278',
+  lContent:'fld4YlOAIY2jXqfcE',lHw:'fldirbUHowlbeyYDT',
+  lNote:'fldDdQPzkWsftHJNh',lHwChk:'fldYXLAIsdGaw9MzI',
   lAbsent:'fld4ZDUO9nS8jY7R7'
 };
+var TOKEN='';
+var allStudents=[];
+var filteredStudents=[];
+var lessonCache={};
 
-let TOKEN = '';
-let allStudents = [];
-let filteredStudents = [];
-const lessonCache = {};
-
-// ─ 토큰 ─────────────────────────────────────────────────
-function startApp() {
-  const pat = document.getElementById('pat').value.trim();
-  if (!pat) { alert('토큰을 입력해주세요'); return; }
-  TOKEN = pat;
-  try { localStorage.setItem('at_pat', btoa(unescape(encodeURIComponent(pat)))); } catch(e) {}
-  document.getElementById('token-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
+function startApp(){
+  var pat=document.getElementById('pat').value.trim();
+  if(!pat){alert('토큰을 입력해주세요');return;}
+  TOKEN=pat;
+  try{localStorage.setItem('at_pat',btoa(unescape(encodeURIComponent(pat))));}catch(e){}
+  document.getElementById('token-screen').style.display='none';
+  document.getElementById('app').style.display='block';
   makeSkeleton();
   loadAll();
 }
-function resetToken() {
-  localStorage.removeItem('at_pat');
-  location.reload();
+function resetToken(){localStorage.removeItem('at_pat');location.reload();}
+
+function atFetch(tableId,fieldArr,filter,sortField){
+  var all=[];
+  var doPage=function(offset){
+    var params=[];
+    fieldArr.forEach(function(f){params.push('fields[]='+encodeURIComponent(f));});
+    if(filter)params.push('filterByFormula='+encodeURIComponent(filter));
+    if(sortField){params.push('sort[0][field]='+encodeURIComponent(sortField));params.push('sort[0][direction]=desc');}
+    params.push('pageSize=100');
+    if(offset)params.push('offset='+encodeURIComponent(offset));
+    var url='https://api.airtable.com/v0/'+BASE+'/'+tableId+'?'+params.join('&');
+    return fetch(url,{headers:{'Authorization':'Bearer '+TOKEN}})
+      .then(function(r){
+        if(!r.ok){return r.json().then(function(e){throw new Error((e.error&&e.error.message)||('HTTP '+r.status));});}
+        return r.json();
+      })
+      .then(function(d){
+        all=all.concat(d.records||[]);
+        if(d.offset)return doPage(d.offset);
+        return all;
+      });
+  };
+  return doPage(null);
 }
 
-// ─ Airtable API ──────────────────────────────────────────
-async function at(tableId, fields, filter, sortField) {
-  let all = [], offset = null;
-  do {
-    const url = new URL(`https://api.airtable.com/v0/${BASE}/${encodeURIComponent(tableId)}`);
-    fields.forEach(f => url.searchParams.append('fields[]', f));
-    if (filter) url.searchParams.set('filterByFormula', filter);
-    if (sortField) { url.searchParams.set('sort[0][field]', sortField); url.searchParams.set('sort[0][direction]', 'desc'); }
-    url.searchParams.set('pageSize', '100');
-    if (offset) url.searchParams.set('offset', offset);
-    const r = await fetch(url.toString(), { headers: { 'Authorization': 'Bearer ' + TOKEN } });
-    if (!r.ok) {
-      const e = await r.json().catch(() => ({}));
-      throw new Error((e.error && e.error.message) || ('에어테이블 오류 ' + r.status));
-    }
-    const d = await r.json();
-    all = all.concat(d.records || []);
-    offset = d.offset || null;
-  } while (offset);
-  return all;
-}
-
-// ─ 내용 추출 ────────────────────────────────────────────
-function extract(text, name) {
-  if (!text || !name) return '';
-  const lines = text.split('\n');
-  const out = [];
-  for (const line of lines) {
-    const ci = line.indexOf(':');
-    if (ci < 0) continue;
-    if (line.substring(0, ci).includes(name)) {
-      const c = line.substring(ci + 1).trim();
-      if (c) out.push(c);
+function extract(text,name){
+  if(!text||!name)return'';
+  var lines=text.split('\n');
+  var out=[];
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i];
+    var ci=line.indexOf(':');
+    if(ci<0)continue;
+    if(line.substring(0,ci).indexOf(name)>=0){
+      var c=line.substring(ci+1).trim();
+      if(c)out.push(c);
     }
   }
   return out.join(' / ');
 }
 
-function fmtDate(s) {
-  if (!s) return '';
-  const parts = s.split('-');
-  const days = ['일','월','화','수','목','금','토'];
-  const dt = new Date(s + 'T12:00:00');
-  return parts[0] + '.' + parseInt(parts[1]) + '.' + parseInt(parts[2]) + ' (' + days[dt.getDay()] + ')';
+function fmtDate(s){
+  if(!s)return'';
+  var parts=s.split('-');
+  var days=['일','월','화','수','목','금','토'];
+  var dt=new Date(s+'T12:00:00');
+  return parts[0]+'.'+parseInt(parts[1])+'.'+parseInt(parts[2])+' ('+days[dt.getDay()]+')';
 }
 
-function esc(s) {
-  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+
+function getStatusName(v){
+  if(!v)return'';
+  if(typeof v==='string')return v;
+  if(typeof v==='object'&&v.name)return v.name;
+  return'';
 }
 
-// ─ 스켈레톤 ─────────────────────────────────────────────
-function makeSkeleton() {
-  const skel = '<div style="background:var(--bg);border:0.5px solid var(--b1);border-radius:12px;padding:12px;">' +
-    '<div class="skel" style="width:36px;height:36px;border-radius:50%;margin-bottom:8px;"></div>' +
-    '<div class="skel" style="width:70%;height:13px;margin-bottom:6px;"></div>' +
-    '<div class="skel" style="width:50%;height:11px;"></div></div>';
-  document.getElementById('skel-grid').innerHTML = skel.repeat(6);
-  const pskel = '<div style="background:var(--bg);border:0.5px solid var(--b1);border-radius:12px;padding:12px 14px;margin-bottom:8px;">' +
-    '<div class="skel" style="width:45%;height:12px;margin-bottom:10px;"></div>' +
-    '<div class="skel" style="width:90%;height:12px;margin-bottom:6px;"></div>' +
-    '<div class="skel" style="width:70%;height:12px;"></div></div>';
-  document.getElementById('p-skel').innerHTML = pskel.repeat(3);
+function makeSkeleton(){
+  var sk='<div style="background:var(--bg);border:0.5px solid var(--b1);border-radius:12px;padding:12px;"><div class="skel" style="width:36px;height:36px;border-radius:50%;margin-bottom:8px;"></div><div class="skel" style="width:70%;height:13px;margin-bottom:6px;"></div><div class="skel" style="width:50%;height:11px;"></div></div>';
+  document.getElementById('skel-grid').innerHTML=sk.repeat(6);
+  var ps='<div style="background:var(--bg);border:0.5px solid var(--b1);border-radius:12px;padding:12px 14px;margin-bottom:8px;"><div class="skel" style="width:45%;height:12px;margin-bottom:10px;"></div><div class="skel" style="width:90%;height:12px;margin-bottom:6px;"></div><div class="skel" style="width:70%;height:12px;"></div></div>';
+  document.getElementById('p-skel').innerHTML=ps.repeat(3);
 }
 
-// ─ 초기화 ────────────────────────────────────────────────
-async function loadAll() {
-  try {
-    const [classRecs, schoolRecs, studentRecs] = await Promise.all([
-      at('tbl4H2KDmJP0gVniY', [F.cName]),
-      at('tblkFOBQewc6GPtVm', [F.scName]),
-      at('tblWxg7O3LENNoFhS', [F.sName, F.sGrade, F.sSchool, F.sClass, F.sStatus])
-    ]);
+function loadAll(){
+  Promise.all([
+    atFetch('tbl4H2KDmJP0gVniY',[F.cName]),
+    atFetch('tblkFOBQewc6GPtVm',[F.scName]),
+    atFetch('tblWxg7O3LENNoFhS',[F.sName,F.sGrade,F.sSchool,F.sClass,F.sStatus])
+  ]).then(function(results){
+    var classRecs=results[0];
+    var schoolRecs=results[1];
+    var studentRecs=results[2];
 
-    const classMap = {};
-    classRecs.forEach(function(r) { classMap[r.id] = r.fields[F.cName] || ''; });
-    const schoolMap = {};
-    schoolRecs.forEach(function(r) { schoolMap[r.id] = r.fields[F.scName] || ''; });
+    console.log('[디버그] 반 수:',classRecs.length,'학교 수:',schoolRecs.length,'학생 수(원본):',studentRecs.length);
 
-    allStudents = studentRecs
-      .filter(function(r) { return !r.fields[F.sStatus]; })
-      .map(function(r) {
-        const f = r.fields;
-        const classIds = f[F.sClass] || [];
-        const schoolIds = f[F.sSchool] || [];
-        return {
-          id: r.id,
-          name: f[F.sName] || '',
-          grade: f[F.sGrade] || '',
-          school: schoolMap[schoolIds[0]] || '',
-          cls: classMap[classIds[0]] || '',
-          classId: classIds[0] || ''
+    var classMap={};
+    classRecs.forEach(function(r){classMap[r.id]=r.fields[F.cName]||'';});
+    var schoolMap={};
+    schoolRecs.forEach(function(r){schoolMap[r.id]=r.fields[F.scName]||'';});
+
+    // 디버그: 첫 번째 학생 레코드 구조 확인
+    if(studentRecs.length>0){
+      console.log('[디버그] 첫 번째 학생 fields:',JSON.stringify(studentRecs[0].fields));
+    }
+
+    allStudents=studentRecs
+      .map(function(r){
+        var f=r.fields;
+        var classIds=f[F.sClass]||[];
+        var schoolIds=f[F.sSchool]||[];
+        var statusVal=f[F.sStatus];
+        var statusName=getStatusName(statusVal);
+        return{
+          id:r.id,
+          name:f[F.sName]||'',
+          grade:f[F.sGrade]||'',
+          school:schoolMap[schoolIds[0]]||'',
+          cls:classMap[classIds[0]]||'',
+          classId:classIds[0]||'',
+          isOut:statusName==='퇴원'
         };
       })
-      .filter(function(s) { return s.name; })
-      .sort(function(a, b) { return a.name.localeCompare(b.name, 'ko'); });
+      .filter(function(s){return s.name;})
+      .sort(function(a,b){return a.name.localeCompare(b.name,'ko');});
 
-    document.getElementById('list-loading').style.display = 'none';
-    document.getElementById('list-ready').style.display = 'block';
-    renderStudents(allStudents);
-  } catch(e) {
-    document.getElementById('list-loading').style.display = 'none';
-    showErr('list-err', '학생 목록 오류: ' + e.message);
-  }
+    var outCount=allStudents.filter(function(s){return s.isOut;}).length;
+    console.log('[디버그] 최종 학생 수:',allStudents.length,'(퇴원:',outCount,')');
+
+    // 디버그 정보 표시
+    var dbgEl=document.getElementById('list-debug');
+    dbgEl.textContent='API 연결 성공 · 전체 '+allStudents.length+'명 (퇴원 '+outCount+'명 포함)';
+    dbgEl.style.display='block';
+
+    document.getElementById('list-loading').style.display='none';
+    document.getElementById('list-ready').style.display='block';
+    renderStudents(allStudents.filter(function(s){return!s.isOut;}));
+  }).catch(function(e){
+    console.error('[디버그] 오류:',e);
+    document.getElementById('list-loading').style.display='none';
+    showErr('list-err','오류: '+e.message);
+  });
 }
 
-// ─ 학생 목록 ─────────────────────────────────────────────
-function renderStudents(list) {
-  filteredStudents = list;
-  const grid = document.getElementById('s-grid');
-  const noRes = document.getElementById('no-res');
-  document.getElementById('cnt').textContent = list.length + '명';
-  if (!list.length) {
-    grid.innerHTML = '';
-    noRes.style.display = 'block';
+function renderStudents(list){
+  filteredStudents=list;
+  var grid=document.getElementById('s-grid');
+  var noRes=document.getElementById('no-res');
+  document.getElementById('cnt').textContent=list.length+'명';
+  if(!list.length){
+    grid.innerHTML='';
+    noRes.style.display='block';
     return;
   }
-  noRes.style.display = 'none';
-  grid.innerHTML = list.map(function(s, i) {
-    return '<div class="s-card" onclick="openStudent(' + i + ')">' +
-      '<div class="av">' + esc(s.name.charAt(0)) + '</div>' +
-      '<div class="s-nm">' + esc(s.name) + '</div>' +
-      '<div class="s-sub">' + esc(s.school) + ' ' + esc(s.grade) + '</div>' +
-      '<div class="s-cls">' + esc(s.cls) + '</div>' +
-    '</div>';
+  noRes.style.display='none';
+  grid.innerHTML=list.map(function(s,i){
+    return'<div class="s-card" onclick="openStudent('+i+')">'
+      +'<div class="av">'+esc(s.name.charAt(0))+'</div>'
+      +'<div class="s-nm">'+esc(s.name)+'</div>'
+      +'<div class="s-sub">'+esc(s.school)+' '+esc(s.grade)+'</div>'
+      +'<div class="s-cls">'+esc(s.cls)+'</div>'
+      +'</div>';
   }).join('');
 }
 
-function filterStudents(q) {
-  const list = q
-    ? allStudents.filter(function(s) {
-        return s.name.includes(q) || s.school.includes(q) || s.cls.includes(q) || s.grade.includes(q);
-      })
-    : allStudents;
+function filterStudents(q){
+  var base=allStudents.filter(function(s){return!s.isOut;});
+  var list=q?base.filter(function(s){
+    return s.name.indexOf(q)>=0||s.school.indexOf(q)>=0||s.cls.indexOf(q)>=0||s.grade.indexOf(q)>=0;
+  }):base;
   renderStudents(list);
 }
 
-// ─ 프로필 ────────────────────────────────────────────────
-async function openStudent(i) {
-  const s = filteredStudents[i];
-  if (!s) return;
-  document.getElementById('list-view').style.display = 'none';
-  document.getElementById('profile').style.display = 'block';
-  document.getElementById('p-nm').textContent = s.name;
-  document.getElementById('p-info').textContent = s.school + ' ' + s.grade;
-  document.getElementById('p-cls').textContent = s.cls + ' · 최근 3주 수업';
-  document.getElementById('p-err').style.display = 'none';
-  document.getElementById('p-loading').style.display = 'block';
-  document.getElementById('p-content').style.display = 'none';
-  document.getElementById('p-content').innerHTML = '';
-  window.scrollTo(0, 0);
-
-  try {
-    const lessons = await fetchLessons(s.classId, s.name);
+function openStudent(i){
+  var s=filteredStudents[i];
+  if(!s)return;
+  document.getElementById('list-view').style.display='none';
+  document.getElementById('profile').style.display='block';
+  document.getElementById('p-nm').textContent=s.name;
+  document.getElementById('p-info').textContent=s.school+' '+s.grade;
+  document.getElementById('p-cls').textContent=s.cls+' · 최근 3주 수업';
+  document.getElementById('p-err').style.display='none';
+  document.getElementById('p-loading').style.display='block';
+  document.getElementById('p-content').style.display='none';
+  document.getElementById('p-content').innerHTML='';
+  window.scrollTo(0,0);
+  fetchLessons(s.classId,s.name).then(function(lessons){
     renderLessons(lessons);
-  } catch(e) {
-    document.getElementById('p-loading').style.display = 'none';
-    showErr('p-err', '수업 기록 오류: ' + e.message);
-  }
+  }).catch(function(e){
+    document.getElementById('p-loading').style.display='none';
+    showErr('p-err','수업 기록 오류: '+e.message);
+  });
 }
 
-async function fetchLessons(classId, name) {
-  const key = classId + '_' + name;
-  if (lessonCache[key]) return lessonCache[key];
-
-  const recs = await at(
-    'tblricZCtZsMdibXS',
-    [F.lDate, F.lClass, F.lContent, F.lHw, F.lNote, F.lHwChk, F.lAbsent],
-    'IS_AFTER({' + F.lDate + '}, DATEADD(TODAY(), -21, \'days\'))',
-    F.lDate
-  );
-
-  const lessons = recs
-    .filter(function(r) {
-      return (r.fields[F.lClass] || []).some(function(c) { return c.id === classId; });
-    })
-    .map(function(r) {
-      const f = r.fields;
-      const absentIds = (f[F.lAbsent] || []).map(function(x) { return x.id; });
-      const noteText = f[F.lNote] || '';
-      const hwChkText = f[F.lHwChk] || '';
-      return {
-        date: f[F.lDate] || '',
-        content: extract(f[F.lContent], name),
-        homework: extract(f[F.lHw], name),
-        note: noteText.includes(name) ? noteText : '',
-        homeworkCheck: hwChkText.includes(name) ? hwChkText : '',
-        absent: absentIds.includes(/* student record id */ '') || (f[F.lAbsent] || []).some(function(x) { return x.name === name; })
-      };
-    })
-    .filter(function(l) { return l.content || l.homework || l.note || l.homeworkCheck || l.absent; });
-
-  lessonCache[key] = lessons;
-  return lessons;
+function fetchLessons(classId,name){
+  var key=classId+'_'+name;
+  if(lessonCache[key])return Promise.resolve(lessonCache[key]);
+  var filter='IS_AFTER({'+F.lDate+'}, DATEADD(TODAY(), -21, \'days\'))';
+  return atFetch('tblricZCtZsMdibXS',[F.lDate,F.lClass,F.lContent,F.lHw,F.lNote,F.lHwChk,F.lAbsent],filter,F.lDate)
+    .then(function(recs){
+      var lessons=recs
+        .filter(function(r){
+          return(r.fields[F.lClass]||[]).some(function(c){return c.id===classId;});
+        })
+        .map(function(r){
+          var f=r.fields;
+          var noteText=f[F.lNote]||'';
+          var hwChkText=f[F.lHwChk]||'';
+          var absent=(f[F.lAbsent]||[]).some(function(x){return x.name===name;});
+          return{
+            date:f[F.lDate]||'',
+            content:extract(f[F.lContent],name),
+            homework:extract(f[F.lHw],name),
+            note:noteText.indexOf(name)>=0?noteText:'',
+            homeworkCheck:hwChkText.indexOf(name)>=0?hwChkText:'',
+            absent:absent
+          };
+        })
+        .filter(function(l){return l.content||l.homework||l.note||l.homeworkCheck||l.absent;});
+      lessonCache[key]=lessons;
+      return lessons;
+    });
 }
 
-function renderLessons(lessons) {
-  document.getElementById('p-loading').style.display = 'none';
-  const el = document.getElementById('p-content');
-  if (!lessons.length) {
-    el.innerHTML = '<div class="empty">최근 3주 수업 기록이 없습니다</div>';
-    el.style.display = 'block';
+function renderLessons(lessons){
+  document.getElementById('p-loading').style.display='none';
+  var el=document.getElementById('p-content');
+  if(!lessons.length){
+    el.innerHTML='<div class="empty">최근 3주 수업 기록이 없습니다</div>';
+    el.style.display='block';
     return;
   }
-  el.innerHTML = lessons.map(function(l) {
-    const hasIssue = l.note || l.homeworkCheck;
-    const cls = l.absent ? 'absent' : hasIssue ? 'issue' : '';
-    let badges = '';
-    if (l.absent) badges += '<span class="badge a">결석</span>';
-    if (l.homeworkCheck) badges += '<span class="badge i">과제 미흡</span>';
-    if (l.note && !l.homeworkCheck) badges += '<span class="badge n">특이사항</span>';
-    let secs = '';
-    if (l.content) secs += '<div class="lsec"><div class="llbl">수업 내용</div><div class="ltxt">' + esc(l.content) + '</div></div>';
-    if (l.homework) secs += (l.content ? '<div class="div"></div>' : '') + '<div class="lsec"><div class="llbl">과제</div><div class="ltxt">' + esc(l.homework) + '</div></div>';
-    if (l.homeworkCheck) secs += '<div class="div"></div><div class="lsec"><div class="llbl">과제 점검</div><div class="lhl warn">' + esc(l.homeworkCheck) + '</div></div>';
-    if (l.note) secs += '<div class="div"></div><div class="lsec"><div class="llbl">특이사항</div><div class="lhl info">' + esc(l.note) + '</div></div>';
-    return '<div class="lcard ' + cls + '"><div class="ltop"><span class="ldate">' + fmtDate(l.date) + '</span>' + badges + '</div>' + secs + '</div>';
+  el.innerHTML=lessons.map(function(l){
+    var hasIssue=l.note||l.homeworkCheck;
+    var cls=l.absent?'absent':hasIssue?'issue':'';
+    var badges='';
+    if(l.absent)badges+='<span class="badge a">결석</span>';
+    if(l.homeworkCheck)badges+='<span class="badge i">과제 미흡</span>';
+    if(l.note&&!l.homeworkCheck)badges+='<span class="badge n">특이사항</span>';
+    var secs='';
+    if(l.content)secs+='<div class="lsec"><div class="llbl">수업 내용</div><div class="ltxt">'+esc(l.content)+'</div></div>';
+    if(l.homework)secs+=(l.content?'<div class="div"></div>':'')+'<div class="lsec"><div class="llbl">과제</div><div class="ltxt">'+esc(l.homework)+'</div></div>';
+    if(l.homeworkCheck)secs+='<div class="div"></div><div class="lsec"><div class="llbl">과제 점검</div><div class="lhl warn">'+esc(l.homeworkCheck)+'</div></div>';
+    if(l.note)secs+='<div class="div"></div><div class="lsec"><div class="llbl">특이사항</div><div class="lhl info">'+esc(l.note)+'</div></div>';
+    return'<div class="lcard '+cls+'"><div class="ltop"><span class="ldate">'+fmtDate(l.date)+'</span>'+badges+'</div>'+secs+'</div>';
   }).join('');
-  el.style.display = 'block';
+  el.style.display='block';
 }
 
-function goBack() {
-  document.getElementById('profile').style.display = 'none';
-  document.getElementById('list-view').style.display = 'block';
-  window.scrollTo(0, 0);
+function goBack(){
+  document.getElementById('profile').style.display='none';
+  document.getElementById('list-view').style.display='block';
+  window.scrollTo(0,0);
+}
+function showErr(id,msg){
+  var el=document.getElementById(id);
+  el.textContent=msg;
+  el.style.display='block';
 }
 
-function showErr(id, msg) {
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-
-// ─ 초기 로드 ─────────────────────────────────────────────
-window.onload = function() {
-  try {
-    const saved = localStorage.getItem('at_pat');
-    if (saved) {
-      TOKEN = decodeURIComponent(escape(atob(saved)));
-      document.getElementById('pat').value = TOKEN;
+window.onload=function(){
+  try{
+    var saved=localStorage.getItem('at_pat');
+    if(saved){
+      TOKEN=decodeURIComponent(escape(atob(saved)));
+      document.getElementById('pat').value=TOKEN;
       startApp();
     }
-  } catch(e) { localStorage.removeItem('at_pat'); }
-  document.getElementById('pat').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') startApp();
-  });
+  }catch(e){localStorage.removeItem('at_pat');}
+  document.getElementById('pat').addEventListener('keydown',function(e){if(e.key==='Enter')startApp();});
 };
 </script>
 </body>

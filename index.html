@@ -395,22 +395,43 @@ function openStudent(i) {
   });
 }
 
+function matchesId(val, id) {
+  // REST API returns strings, MCP returns objects - handle both
+  if (!val) return false;
+  if (typeof val === 'string') return val === id;
+  if (typeof val === 'object') return val.id === id || val.name === id;
+  return false;
+}
+
 function fetchLessons(classId, name) {
   var key = classId + '_' + name;
   if (lessonCache[key]) return Promise.resolve(lessonCache[key]);
   var filter = 'IS_AFTER({' + F_LDATE + "}, DATEADD(TODAY(), -21, 'days'))";
   return atFetch(TBL_LESSONS, filter, F_LDATE).then(function(recs) {
+    console.log('[디버그] 3주 수업 기록 전체:', recs.length, '건');
+    if (recs.length > 0) {
+      var sample = recs[0].fields;
+      var classVal = getField(sample, F_LCLASS, '반');
+      console.log('[디버그] 첫 번째 레코드 반 필드:', JSON.stringify(classVal));
+      console.log('[디버그] 찾으려는 classId:', classId);
+    }
+
     var lessons = recs
       .filter(function(r) {
         var cls = getField(r.fields, F_LCLASS, '반') || [];
-        return cls.some(function(c) { return c.id === classId; });
+        // REST API: cls = ["recXXXX"], MCP: cls = [{id:"recXXXX", name:"..."}]
+        return cls.some(function(c) { return matchesId(c, classId); });
       })
       .map(function(r) {
         var f = r.fields;
         var noteText  = getField(f, F_LNOTE,  '개별 코멘트(특이사항)') || '';
         var hwChkText = getField(f, F_LHWCHK, '과제점검') || '';
         var absentArr = getField(f, F_LABSENT, '결석자') || [];
-        var absent = absentArr.some(function(x) { return x.name === name; });
+        // 결석: 이름 포함된 텍스트나 linked record 모두 체크
+        var absent = absentArr.some(function(x) {
+          if (typeof x === 'string') return false; // record ID만 있을 때는 확인 불가
+          return x && x.name === name;
+        });
         return {
           date: getField(f, F_LDATE, '수업일시') || '',
           content: extract(getField(f, F_LCONT, '수업 내용') || '', name),
@@ -421,6 +442,8 @@ function fetchLessons(classId, name) {
         };
       })
       .filter(function(l) { return l.content || l.homework || l.note || l.homeworkCheck || l.absent; });
+
+    console.log('[디버그] 해당 반 수업:', lessons.length, '건 (학생 내용 있는 것)');
     lessonCache[key] = lessons;
     return lessons;
   });

@@ -154,13 +154,18 @@ var F_SCLASS  = 'fldRgJvxEkgxzLpk1';
 var F_SSTATUS = 'fldpj2cjO6b8x4M26';
 var F_CNAME   = 'fldJWIyfEAtE9lhYQ';
 var F_SCNAME  = 'fldGePCJIigrBqJWM';
-var F_LDATE   = 'fld19rmWbyJhwrI4b';
-var F_LCLASS  = 'fld8DNfmCLhVVf278';
-var F_LCONT   = 'fld4YlOAIY2jXqfcE';
-var F_LHW     = 'fldirbUHowlbeyYDT';
-var F_LNOTE   = 'fldDdQPzkWsftHJNh';
-var F_LHWCHK  = 'fldYXLAIsdGaw9MzI';
-var F_LABSENT = 'fld4ZDUO9nS8jY7R7';
+var F_LDATE     = 'fld19rmWbyJhwrI4b'; // 수업일시
+var F_LCLASS    = 'fld8DNfmCLhVVf278'; // 반
+var F_LCONT     = 'fld4YlOAIY2jXqfcE'; // 수업 내용
+var F_LHW       = 'fldirbUHowlbeyYDT'; // 과제
+var F_LABSENT   = 'fld4ZDUO9nS8jY7R7'; // 결석자
+var F_LNOTE     = 'fldDdQPzkWsftHJNh'; // 개별 코멘트(특이사항)
+var F_LPROGRESS = 'fldWmUpGHVF37ms6c'; // 진도
+var F_LTYPE     = 'fldOSVJ7SwXrsSxNU'; // 수업 구분
+var F_LNEXTPLAN = 'fldYM8ZqJIfVkCxFr'; // 다음 수업 계획
+var F_LHWCHK    = 'fldYXLAIsdGaw9MzI'; // 과제점검
+var F_LUNIT     = 'fldV5hbV2N64QBrtF'; // 단원별
+var F_LHWCHK2   = 'fldzeMUPZYoiymR1W'; // 과제점검2
 
 var TOKEN = '';
 var allStudents = [];
@@ -396,11 +401,17 @@ function openStudent(i) {
 }
 
 function matchesId(val, id) {
-  // REST API returns strings, MCP returns objects - handle both
   if (!val) return false;
   if (typeof val === 'string') return val === id;
   if (typeof val === 'object') return val.id === id || val.name === id;
   return false;
+}
+
+function selectName(v) {
+  if (!v) return '';
+  if (typeof v === 'string') return v;
+  if (typeof v === 'object' && v.name) return v.name;
+  return '';
 }
 
 function fetchLessons(classId, name) {
@@ -408,45 +419,56 @@ function fetchLessons(classId, name) {
   if (lessonCache[key]) return Promise.resolve(lessonCache[key]);
   var filter = 'IS_AFTER({' + F_LDATE + "}, DATEADD(TODAY(), -21, 'days'))";
   return atFetch(TBL_LESSONS, filter, F_LDATE).then(function(recs) {
-    console.log('[디버그] 3주 수업 기록 전체:', recs.length, '건');
-    if (recs.length > 0) {
-      var sample = recs[0].fields;
-      var classVal = getField(sample, F_LCLASS, '반');
-      console.log('[디버그] 첫 번째 레코드 반 필드:', JSON.stringify(classVal));
-      console.log('[디버그] 찾으려는 classId:', classId);
-    }
-
     var lessons = recs
       .filter(function(r) {
         var cls = getField(r.fields, F_LCLASS, '반') || [];
-        // REST API: cls = ["recXXXX"], MCP: cls = [{id:"recXXXX", name:"..."}]
         return cls.some(function(c) { return matchesId(c, classId); });
       })
       .map(function(r) {
         var f = r.fields;
-        var noteText  = getField(f, F_LNOTE,  '개별 코멘트(특이사항)') || '';
-        var hwChkText = getField(f, F_LHWCHK, '과제점검') || '';
-        var absentArr = getField(f, F_LABSENT, '결석자') || [];
-        // 결석: 이름 포함된 텍스트나 linked record 모두 체크
+        var noteText    = getField(f, F_LNOTE,     '개별 코멘트(특이사항)') || '';
+        var hwChkText   = getField(f, F_LHWCHK,    '과제점검') || '';
+        var hwChk2Text  = getField(f, F_LHWCHK2,   '과제점검2') || '';
+        var absentArr   = getField(f, F_LABSENT,   '결석자') || [];
+        var typeArr     = getField(f, F_LTYPE,     '수업 구분') || [];
+        var progressVal = getField(f, F_LPROGRESS, '진도');
+        var unitText    = getField(f, F_LUNIT,     '단원별') || '';
+        var nextPlan    = getField(f, F_LNEXTPLAN, '다음 수업 계획') || '';
         var absent = absentArr.some(function(x) {
-          if (typeof x === 'string') return false; // record ID만 있을 때는 확인 불가
+          if (typeof x === 'string') return false;
           return x && x.name === name;
         });
+        // 수업 구분: 배열이면 이름만 추출
+        var types = typeArr.map(function(t) { return selectName(t); }).filter(Boolean);
         return {
-          date: getField(f, F_LDATE, '수업일시') || '',
-          content: extract(getField(f, F_LCONT, '수업 내용') || '', name),
-          homework: extract(getField(f, F_LHW, '과제') || '', name),
-          note: noteText.indexOf(name) >= 0 ? noteText : '',
+          date:         getField(f, F_LDATE, '수업일시') || '',
+          progress:     selectName(progressVal),
+          unit:         unitText,
+          types:        types,
+          content:      extract(getField(f, F_LCONT, '수업 내용') || '', name),
+          homework:     extract(getField(f, F_LHW, '과제') || '', name),
+          nextPlan:     extract(nextPlan, name) || (nextPlan.indexOf(':') < 0 ? nextPlan : ''),
           homeworkCheck: hwChkText.indexOf(name) >= 0 ? hwChkText : '',
-          absent: absent
+          homeworkCheck2: hwChk2Text.indexOf(name) >= 0 ? hwChk2Text : '',
+          note:         noteText.indexOf(name) >= 0 ? noteText : '',
+          absent:       absent
         };
-      })
-      .filter(function(l) { return l.content || l.homework || l.note || l.homeworkCheck || l.absent; });
-
-    console.log('[디버그] 해당 반 수업:', lessons.length, '건 (학생 내용 있는 것)');
+      });
     lessonCache[key] = lessons;
     return lessons;
   });
+}
+
+function sec(label, text, style) {
+  if (!text) return '';
+  var cls = style ? ' ' + style : '';
+  return '<div class="lsec"><div class="llbl">' + label + '</div>'
+    + '<div class="ltxt' + cls + '">' + esc(text) + '</div></div>';
+}
+function secHl(label, text, hlcls) {
+  if (!text) return '';
+  return '<div class="lsec"><div class="llbl">' + label + '</div>'
+    + '<div class="lhl ' + hlcls + '">' + esc(text) + '</div></div>';
 }
 
 function renderLessons(lessons) {
@@ -458,18 +480,45 @@ function renderLessons(lessons) {
     return;
   }
   el.innerHTML = lessons.map(function(l) {
-    var hasIssue = l.note || l.homeworkCheck;
-    var cls = l.absent ? 'absent' : hasIssue ? 'issue' : '';
+    var hasIssue = l.note || l.homeworkCheck || l.homeworkCheck2;
+    var cardCls = l.absent ? 'absent' : hasIssue ? 'issue' : '';
+    // 상단 배지
     var badges = '';
-    if (l.absent) badges += '<span class="badge a">결석</span>';
-    if (l.homeworkCheck) badges += '<span class="badge i">과제 미흡</span>';
-    if (l.note && !l.homeworkCheck) badges += '<span class="badge n">특이사항</span>';
+    if (l.absent)         badges += '<span class="badge a">결석</span>';
+    if (l.homeworkCheck || l.homeworkCheck2) badges += '<span class="badge i">과제 미흡</span>';
+    if (l.note && !l.homeworkCheck && !l.homeworkCheck2) badges += '<span class="badge n">특이사항</span>';
+    // 수업 구분 태그
+    var typeTags = l.types.map(function(t) {
+      return '<span class="badge" style="background:var(--bg2);color:var(--t2);border:0.5px solid var(--b1);">' + esc(t) + '</span>';
+    }).join('');
+    // 진도 + 단원
+    var metaRow = '';
+    if (l.progress || l.unit) {
+      metaRow = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">';
+      if (l.progress) metaRow += '<span style="font-size:12px;color:var(--t2);background:var(--bg2);padding:2px 8px;border-radius:6px;">' + esc(l.progress) + '</span>';
+      if (l.unit)     metaRow += '<span style="font-size:12px;color:var(--t2);">' + esc(l.unit) + '</span>';
+      metaRow += '</div>';
+    }
+    // 섹션들
     var secs = '';
-    if (l.content) secs += '<div class="lsec"><div class="llbl">수업 내용</div><div class="ltxt">' + esc(l.content) + '</div></div>';
-    if (l.homework) secs += (l.content ? '<div class="div"></div>' : '') + '<div class="lsec"><div class="llbl">과제</div><div class="ltxt">' + esc(l.homework) + '</div></div>';
-    if (l.homeworkCheck) secs += '<div class="div"></div><div class="lsec"><div class="llbl">과제 점검</div><div class="lhl warn">' + esc(l.homeworkCheck) + '</div></div>';
-    if (l.note) secs += '<div class="div"></div><div class="lsec"><div class="llbl">특이사항</div><div class="lhl info">' + esc(l.note) + '</div></div>';
-    return '<div class="lcard ' + cls + '"><div class="ltop"><span class="ldate">' + fmtDate(l.date) + '</span>' + badges + '</div>' + secs + '</div>';
+    if (typeTags) secs += '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">' + typeTags + '</div>';
+    secs += metaRow;
+    var items = [
+      sec('수업 내용', l.content),
+      sec('과제', l.homework),
+      secHl('과제 점검', l.homeworkCheck, 'warn'),
+      secHl('과제 점검2', l.homeworkCheck2, 'warn'),
+      secHl('특이사항', l.note, 'info'),
+      sec('다음 수업 계획', l.nextPlan)
+    ];
+    var filled = items.filter(Boolean);
+    secs += filled.map(function(s, i) {
+      return (i > 0 ? '<div class="div"></div>' : '') + s;
+    }).join('');
+    return '<div class="lcard ' + cardCls + '">'
+      + '<div class="ltop"><span class="ldate">' + fmtDate(l.date) + '</span>' + badges + '</div>'
+      + secs
+      + '</div>';
   }).join('');
   el.style.display = 'block';
 }
